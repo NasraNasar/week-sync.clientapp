@@ -1,0 +1,72 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { CalendarCheck2, FolderKanban, Users } from "lucide-react";
+
+import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { getDashboardSummary } from "@/lib/api/dashboard-client";
+import type { DashboardSummary } from "@/lib/api/types";
+
+const EMPTY_SUMMARY: DashboardSummary = {
+  activeMembers: 0,
+  liveProjects: 0,
+  reportsThisWeek: 0,
+};
+
+export function AuthShowcasePanel() {
+  const [summary, setSummary] = useState<DashboardSummary>(EMPTY_SUMMARY);
+
+  useEffect(() => {
+    let cancelled = false;
+    getDashboardSummary()
+      .then((s) => {
+        if (!cancelled) setSummary(s);
+      })
+      .catch(() => {
+        // Decorative stats — leave at 0 rather than surface an error here.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = [
+    { label: "Active members", value: summary.activeMembers, icon: Users },
+    { label: "Live projects", value: summary.liveProjects, icon: FolderKanban },
+    { label: "Reports this week", value: summary.reportsThisWeek, icon: CalendarCheck2 },
+  ];
+
+  return (
+    <div className="hidden lg:flex lg:flex-col lg:justify-between h-full w-full border-r border-border bg-secondary text-foreground px-10 py-12 xl:px-14">
+      <div className="text-lg font-semibold tracking-tight">
+        Week sync
+      </div>
+
+      <div className="max-w-md space-y-4">
+        <h2 className="text-3xl font-semibold leading-tight tracking-tight xl:text-4xl">
+          One clear rhythm for weekly reporting and review.
+        </h2>
+        <p className="text-muted-foreground text-base leading-relaxed">
+          Submit weekly updates, track blockers, and keep managers and teams
+          in sync — without another spreadsheet.
+        </p>
+      </div>
+
+      <dl className="grid grid-cols-3 gap-4">
+        {stats.map(({ label, value, icon: Icon }) => (
+          <div
+            key={label}
+            className="rounded-lg border border-border bg-card p-4"
+            style={{ boxShadow: "var(--shadow-card)" }}
+          >
+            <Icon className="text-primary size-5" />
+            <dd className="mt-3 text-2xl font-semibold tracking-tight">
+              <AnimatedNumber value={value} />
+            </dd>
+            <dt className="text-muted-foreground text-sm">{label}</dt>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
